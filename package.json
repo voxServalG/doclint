@@ -1,0 +1,19 @@
+{
+  "name": "doclint",
+  "version": "1.0.0",
+  "description": "CI 文档质量检查工具 — 检查文档格式、链接、陈旧度等问题",
+  "type": "module",
+  "bin": {
+    "doclint": "./index.js"
+  },
+  "files": [
+    "index.js",
+    "lib/",
+    "deploy/",
+    "templates/"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  }
+}

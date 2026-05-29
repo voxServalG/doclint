@@ -1,0 +1,104 @@
+#!/usr/bin/env node
+
+import path from "path";
+import fs from "fs";
+
+const command = process.argv[2];
+const projectRoot = process.cwd();
+
+async function main() {
+  switch (command) {
+    case "deploy":
+    case "init": {
+      const { run } = await import("./deploy/ui.js");
+      await run(projectRoot);
+      break;
+    }
+    case "lint": {
+      const { load } = await import("./lib/config.js");
+      const { lint } = await import("./lib/linter.js");
+
+      const config = load(projectRoot);
+      const summary = lint(projectRoot, config);
+
+      const jsonOutput = process.argv.includes("--json");
+      if (jsonOutput) {
+        console.log(JSON.stringify(summary, null, 2));
+      } else {
+        console.log("\n# Docs Lint Report\n");
+        console.log(`Total: ${summary.total} | Passed: ${summary.passed} | Failed: ${summary.failed}\n`);
+
+        for (const result of summary.results) {
+          if (result.issues.length === 0) continue;
+          console.log(`## ${result.file}`);
+          console.log(`Lines: ${result.lineCount} | Last modified: ${result.lastModified}\n`);
+          for (const issue of result.issues) {
+            const icon = issue.severity === "error" ? "❌" : "⚠️";
+            console.log(`  ${icon} [${issue.rule}] ${issue.message}`);
+          }
+          console.log("");
+        }
+      }
+
+      const hasErrors = summary.results.some((r) => r.issues.some((i) => i.severity === "error"));
+      if (hasErrors) process.exit(1);
+      break;
+    }
+    case "garden": {
+      const { load } = await import("./lib/config.js");
+      const { garden } = await import("./lib/gardener.js");
+
+      let dryRun = process.argv.includes("--dry-run");
+      let isGit = false;
+      try {
+        const { execSync } = await import("child_process");
+        execSync("git diff --quiet", { cwd: projectRoot });
+        isGit = true;
+      } catch {
+        // not a git repo or git diff failed
+      }
+
+      if (!isGit) {
+        console.log("\n  ℹ 当前目录不是 git 仓库，仅展示预览：\n");
+        dryRun = true;
+      }
+
+      const config = load(projectRoot);
+      const result = garden(projectRoot, config, dryRun);
+
+      if (dryRun) {
+        console.log("\n# Doc Gardening Preview\n");
+        if (result.total === 0) {
+          console.log("No issues found that can be auto-fixed");
+        } else {
+          console.log(`Found ${result.total} issues:\n`);
+          for (const fix of result.fixes) {
+            console.log(`- ${fix.file}: ${fix.description}`);
+          }
+        }
+        if (!isGit) {
+          console.log("\n以上为预览，不会修改文件。");
+        }
+      } else {
+        console.log(`\n# Doc Gardening\n\nFixed ${result.total} issues:\n`);
+        for (const fix of result.fixes) {
+          console.log(`- ${fix.file}: ${fix.description}`);
+        }
+      }
+      break;
+    }
+    default: {
+      console.log("doclint · 文档质量 CI 检查工具\n");
+      console.log("用法:");
+      console.log("  doclint deploy    部署配置（交互式）");
+      console.log("  doclint lint      检查文档质量");
+      console.log("  doclint garden    自动修复常见问题");
+      break;
+    }
+  }
+}
+
+main().catch((err) => {
+  console.error("Error:", err.message);
+  process.exit(1);
+});
