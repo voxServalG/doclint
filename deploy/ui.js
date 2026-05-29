@@ -1,8 +1,11 @@
 import fs from "fs";
 import path from "path";
 import readline from "readline";
+import { fileURLToPath } from "url";
 import { detect } from "./detect.js";
 import { validate } from "../lib/config.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const existing = {};
 
@@ -277,7 +280,7 @@ async function editStaleDays(cfg) {
 }
 
 function writeWorkflow(projectRoot) {
-  const templateDir = path.resolve(import.meta.dirname, "..", "templates");
+  const templateDir = path.resolve(__dirname, "..", "templates");
   const templatePath = path.join(templateDir, "docs-check.yml");
   const content = fs.readFileSync(templatePath, "utf-8");
 

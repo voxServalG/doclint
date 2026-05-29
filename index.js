@@ -18,6 +18,8 @@ async function main() {
       const { load } = await import("./lib/config.js");
       const { lint } = await import("./lib/linter.js");
 
+      checkConfigExists(projectRoot);
+
       const config = load(projectRoot);
       const summary = lint(projectRoot, config);
 
@@ -47,6 +49,8 @@ async function main() {
     case "garden": {
       const { load } = await import("./lib/config.js");
       const { garden } = await import("./lib/gardener.js");
+
+      checkConfigExists(projectRoot);
 
       let dryRun = process.argv.includes("--dry-run");
       let isGit = false;
@@ -95,6 +99,14 @@ async function main() {
       console.log("  doclint garden    自动修复常见问题");
       break;
     }
+  }
+}
+
+function checkConfigExists(projectRoot) {
+  const configPath = path.join(projectRoot, "doclint.json");
+  if (!fs.existsSync(configPath)) {
+    console.log("  ⚠ 未找到 doclint.json");
+    console.log("  请先运行 doclint deploy 生成配置文件\n");
   }
 }
 
