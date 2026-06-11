@@ -1,0 +1,11 @@
+{
+  "lintDirs": [
+    "src"
+  ],
+  "codeDirs": [
+    "src"
+  ],
+  "codeExt": ".js",
+  "baseBranch": "dev",
+  "maxLines": 500
+}
