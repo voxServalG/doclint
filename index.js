@@ -5,6 +5,7 @@ import fs from "fs";
 
 const command = process.argv[2];
 const projectRoot = process.cwd();
+const jsonOutput = process.argv.includes("--json");
 
 async function main() {
   switch (command) {
@@ -17,15 +18,15 @@ async function main() {
     case "lint": {
       const { load } = await import("./lib/config.js");
       const { lint } = await import("./lib/linter.js");
+      const { lintResult } = await import("./lib/result.js");
 
       checkConfigExists(projectRoot);
 
       const config = load(projectRoot);
       const summary = lint(projectRoot, config);
 
-      const jsonOutput = process.argv.includes("--json");
       if (jsonOutput) {
-        console.log(JSON.stringify(summary, null, 2));
+        console.log(JSON.stringify(lintResult(summary), null, 2));
       } else {
         console.log("\n# Docs Lint Report\n");
         console.log(`Total: ${summary.total} | Passed: ${summary.passed} | Failed: ${summary.failed}\n`);
@@ -49,28 +50,32 @@ async function main() {
     case "garden": {
       const { load } = await import("./lib/config.js");
       const { garden } = await import("./lib/gardener.js");
+      const { gardenResult } = await import("./lib/result.js");
 
       checkConfigExists(projectRoot);
 
-      let dryRun = process.argv.includes("--dry-run");
+      const confirmed = process.argv.includes("--yes");
+      let dryRun = process.argv.includes("--dry-run") || !confirmed;
       let isGit = false;
       try {
         const { execSync } = await import("child_process");
-        execSync("git diff --quiet", { cwd: projectRoot });
+        execSync("git rev-parse --is-inside-work-tree", { cwd: projectRoot, stdio: "ignore" });
         isGit = true;
       } catch {
         // not a git repo or git diff failed
       }
 
       if (!isGit) {
-        console.log("\n  ℹ 当前目录不是 git 仓库，仅展示预览：\n");
+        if (!jsonOutput) console.log("\n  ℹ 当前目录不是 git 仓库，仅展示预览：\n");
         dryRun = true;
       }
 
       const config = load(projectRoot);
       const result = garden(projectRoot, config, dryRun);
 
-      if (dryRun) {
+      if (jsonOutput) {
+        console.log(JSON.stringify(gardenResult(result), null, 2));
+      } else if (dryRun) {
         console.log("\n# Doc Gardening Preview\n");
         if (result.total === 0) {
           console.log("No issues found that can be auto-fixed");
@@ -82,6 +87,8 @@ async function main() {
         }
         if (!isGit) {
           console.log("\n以上为预览，不会修改文件。");
+        } else if (!confirmed) {
+          console.log("\n预览完成，不会修改文件。确认后运行 doclint garden --yes 应用修复。");
         }
       } else {
         console.log(`\n# Doc Gardening\n\nFixed ${result.total} issues:\n`);
