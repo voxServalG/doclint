@@ -15,7 +15,7 @@ npm install -g github:voxServalG/doclint
 ```bash
 doclint deploy     # 自动探测项目配置并部署
 doclint lint       # 检查文档质量
-doclint garden     # 自动修复常见问题
+doclint garden     # 预览常见问题修复
 ```
 
 ### deploy
@@ -31,7 +31,48 @@ doclint garden     # 自动修复常见问题
 
 ### garden
 
-自动修复三类常见问题：子文件缺失回链、索引文件缺失条目、无效的内部链接。支持 `--dry-run` 仅预览不修改。
+自动修复三类常见问题：子文件缺失回链、索引文件缺失条目、无效的内部链接。默认仅预览不修改；确认后使用 `--yes` 应用修复，仍可使用 `--dry-run` 显式预览。
+
+## Agent 调用协议
+
+`lint --json` 和 `garden --json` 会输出面向 agent 的 envelope，而不是只输出人类文案：
+
+```json
+{
+  "ok": true,
+  "data": {},
+  "display": {
+    "title": "Docs lint passed",
+    "body": "Files: 0, failed: 0, errors: 0, warnings: 0"
+  },
+  "hint": "No doclint errors were found. It is safe to continue to the next workflow step.",
+  "requires_user": false,
+  "stop_here": false,
+  "next": {
+    "allowed": ["continue"],
+    "blocked": []
+  }
+}
+```
+
+字段约定：
+
+| 字段 | 说明 |
+|------|------|
+| `ok` | 当前命令是否达到可继续状态 |
+| `data` | 给 agent 读取的完整机器数据，`lint` 的原始报告保留在 `data.summary` |
+| `display` | 给用户展示的标题和摘要 |
+| `hint` | 给 agent 的下一步行为提示 |
+| `requires_user` | 是否需要用户确认或介入 |
+| `stop_here` | agent 本轮是否应停止继续自动执行 |
+| `next` | 当前建议允许或阻止的后续动作 |
+| `recovery` | 需要恢复时应运行的命令和原因 |
+
+`garden --json` 默认只预览修复并在存在可修复项时返回 `requires_user: true` 与 `stop_here: true`。agent 必须把 `display` 和 `data.result.fixes` 展示给用户；只有用户明确确认后，才应运行：
+
+```bash
+doclint garden --yes
+```
 
 ## 检查规则
 
