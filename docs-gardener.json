@@ -1,0 +1,10 @@
+{
+  "docsDir": "docs",
+  "codeDirs": [
+    "src",
+    "lib"
+  ],
+  "codeExt": ".js",
+  "baseBranch": "dev",
+  "catalogs": {}
+}
