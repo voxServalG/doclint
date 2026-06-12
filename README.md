@@ -78,7 +78,7 @@ doclint garden --yes
 
 | 规则 | 级别 | 说明 |
 |------|------|------|
-| `line-limit` | error | 文件超过配置的最大行数 |
+| `line-limit` | error | 文件超过配置的最大行数；整行注释和纯注释块不计入行数 |
 | `has-reference` | error | 文件未被任何其他 md 文件引用 |
 | `link-valid` | error | 内部链接目标文件不存在 |
 | `back-link` | warning | 子文件缺少回链到主文件 |
@@ -110,3 +110,5 @@ doclint garden --yes
 | `baseBranch` | PR 目标分支 | `main` |
 | `maxLines` | 单文件最大行数（10–10000） | `200` |
 | `staleDays` | 陈旧天数阈值（1–365） | `30` |
+
+`maxLines` 按文件扩展名选择注释语法。已覆盖 JavaScript/TypeScript、C/C++/C#、Java、Go、Rust、Swift、Kotlin、Scala、Dart、Objective-C、Groovy、Solidity、Protocol Buffers、shader、CUDA/OpenCL、CSS/SCSS/Less、HTML/XML/Vue/Svelte、Python、Shell、Ruby、Perl、R、Nim、Crystal、Elixir、YAML/TOML/INI、PowerShell、Julia、PHP、SQL、Lua、Haskell/Elm、Erlang、Lisp/Clojure/Scheme/Racket、Terraform/HCL、Nix、Batch、F#/OCaml、Ada、Fortran、TeX、VB/VBScript、Vim、ignore/env 文件、Markdown 等常见扩展名。整行都是注释或处于纯注释块中的行不计入触发 `warning` 或 `error` 的代码行数。带有代码的行内注释仍计为代码行。未知扩展名保持原始物理行数统计。
